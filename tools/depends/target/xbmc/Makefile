@@ -20,6 +20,10 @@ ifeq ($(Configuration),Release)
 DEBUG = --enable-debug=no
 endif
 
+ifeq ($(CPU),arm64)
+CONFIGURE += --with-cpu=arm64
+endif
+
 CONFIGURE += $(CONFIG_EXTRA)
 
 all: $(SOURCE)/lib$(APP_NAME).so
