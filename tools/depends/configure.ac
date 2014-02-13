@@ -255,7 +255,7 @@ case $host in
         if test "x$use_cpu" = "xauto"; then
           use_cpu=armv7
         fi
-        if test "$use_cpu" != "armv7"; then
+        if test "$use_cpu" != "armv7" && test "$use_cpu" != "armv7s" && test "$use_cpu" != "arm64"; then
           AC_MSG_ERROR(error in configure of --with-arch=$use_cpu)
         fi
         platform_min_version="iphoneos-version-min=5.1"
