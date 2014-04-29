@@ -22,7 +22,8 @@
 #include "config.h"
 #include "libavutil/cpu.h"
 
-#define have_neon(flags) (HAVE_NEON    && ((flags) & AV_CPU_FLAG_NEON))
-#define have_vfp(flags)  (HAVE_VFP     && ((flags) & AV_CPU_FLAG_VFP))
+#define have_armv8(flags) (HAVE_ARMV8   && ((flags) & AV_CPU_FLAG_ARMV8))
+#define have_neon(flags)  (HAVE_NEON    && ((flags) & AV_CPU_FLAG_NEON))
+#define have_vfp(flags)   (HAVE_VFP     && ((flags) & AV_CPU_FLAG_VFP))
 
 #endif /* AVUTIL_AARCH64_CPU_H */

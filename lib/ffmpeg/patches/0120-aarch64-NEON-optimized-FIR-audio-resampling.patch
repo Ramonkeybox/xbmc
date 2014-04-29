@@ -1,0 +1,416 @@
+From 12109b3dd68eaa97f7f347ef4b85db47ea753f3d Mon Sep 17 00:00:00 2001
+From: Janne Grunau <janne-libav@jannau.net>
+Date: Mon, 21 Apr 2014 16:13:28 +0200
+Subject: [PATCH 120/120] aarch64: NEON optimized FIR audio resampling
+
+Optimized for the default filter length 16.
+
+30% faster opus silk decoding.
+
+Conflicts:
+	libavresample/aarch64/Makefile
+
+Signed-off-by: Linus Yang <laokongzi@gmail.com>
+---
+ libavresample/aarch64/Makefile        |   6 +-
+ libavresample/aarch64/asm-offsets.h   |  28 ++++
+ libavresample/aarch64/resample_init.c |  71 +++++++++++
+ libavresample/aarch64/resample_neon.S | 233 ++++++++++++++++++++++++++++++++++
+ libavresample/internal.h              |   3 +
+ libavresample/resample.c              |   3 +
+ 6 files changed, 342 insertions(+), 2 deletions(-)
+ create mode 100644 libavresample/aarch64/asm-offsets.h
+ create mode 100644 libavresample/aarch64/resample_init.c
+ create mode 100644 libavresample/aarch64/resample_neon.S
+
+diff --git a/libavresample/aarch64/Makefile b/libavresample/aarch64/Makefile
+index 9e936d7..106580f 100644
+--- a/libavresample/aarch64/Makefile
++++ b/libavresample/aarch64/Makefile
+@@ -1,3 +1,5 @@
+-OBJS                             += aarch64/audio_convert_init.o
++OBJS                             += aarch64/audio_convert_init.o    \
++                                    aarch64/resample_init.o         \
+ 
+-NEON-OBJS                        += aarch64/audio_convert_neon.o
++NEON-OBJS                        += aarch64/audio_convert_neon.o    \
++                                    aarch64/resample_neon.o         \
+diff --git a/libavresample/aarch64/asm-offsets.h b/libavresample/aarch64/asm-offsets.h
+new file mode 100644
+index 0000000..856f191
+--- /dev/null
++++ b/libavresample/aarch64/asm-offsets.h
+@@ -0,0 +1,28 @@
++/*
++ * This file is part of Libav.
++ *
++ * Libav is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * Libav is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with Libav; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#ifndef AVRESAMPLE_AARCH64_ASM_OFFSETS_H
++#define AVRESAMPLE_AARCH64_ASM_OFFSETS_H
++
++/* struct ResampleContext */
++#define FILTER_BANK                     0x10
++#define FILTER_LENGTH                   0x18
++#define PHASE_SHIFT                     0x34
++#define PHASE_MASK                      (PHASE_SHIFT + 0x04) // loaded as pair
++
++#endif /* AVRESAMPLE_AARCH64_ASM_OFFSETS_H */
+diff --git a/libavresample/aarch64/resample_init.c b/libavresample/aarch64/resample_init.c
+new file mode 100644
+index 0000000..9ef9977
+--- /dev/null
++++ b/libavresample/aarch64/resample_init.c
+@@ -0,0 +1,71 @@
++/*
++ * This file is part of Libav.
++ *
++ * Libav is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * Libav is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with Libav; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include <stdint.h>
++
++#include "config.h"
++#include "libavutil/cpu.h"
++#include "libavutil/aarch64/cpu.h"
++#include "libavutil/internal.h"
++#include "libavutil/samplefmt.h"
++#include "libavresample/resample.h"
++
++#include "asm-offsets.h"
++
++AV_CHECK_OFFSET(struct ResampleContext, filter_bank,   FILTER_BANK);
++AV_CHECK_OFFSET(struct ResampleContext, filter_length, FILTER_LENGTH);
++AV_CHECK_OFFSET(struct ResampleContext, phase_shift,   PHASE_SHIFT);
++AV_CHECK_OFFSET(struct ResampleContext, phase_mask,    PHASE_MASK);
++
++void ff_resample_one_dbl_neon(struct ResampleContext *c, void *dst0,
++                              int dst_index, const void *src0,
++                              unsigned int index, int frac);
++void ff_resample_one_flt_neon(struct ResampleContext *c, void *dst0,
++                              int dst_index, const void *src0,
++                              unsigned int index, int frac);
++void ff_resample_one_s16_neon(struct ResampleContext *c, void *dst0,
++                              int dst_index, const void *src0,
++                              unsigned int index, int frac);
++void ff_resample_one_s32_neon(struct ResampleContext *c, void *dst0,
++                              int dst_index, const void *src0,
++                              unsigned int index, int frac);
++
++void ff_audio_resample_init_aarch64(ResampleContext *c,
++                                    enum AVSampleFormat sample_fmt)
++{
++    int cpu_flags = av_get_cpu_flags();
++
++    if (have_neon(cpu_flags)) {
++        if (!c->linear) {
++            switch (sample_fmt) {
++            case AV_SAMPLE_FMT_DBLP:
++                c->resample_one  = ff_resample_one_dbl_neon;
++                break;
++            case AV_SAMPLE_FMT_FLTP:
++                c->resample_one  = ff_resample_one_flt_neon;
++                break;
++            case AV_SAMPLE_FMT_S16P:
++                c->resample_one  = ff_resample_one_s16_neon;
++                break;
++            case AV_SAMPLE_FMT_S32P:
++                c->resample_one  = ff_resample_one_s32_neon;
++                break;
++            }
++        }
++    }
++}
+diff --git a/libavresample/aarch64/resample_neon.S b/libavresample/aarch64/resample_neon.S
+new file mode 100644
+index 0000000..94aec58
+--- /dev/null
++++ b/libavresample/aarch64/resample_neon.S
+@@ -0,0 +1,233 @@
++/*
++ * Copyright (c) 2014 Janne Grunau <janne-libav@jannau.net>
++ *
++ * This file is part of Libav.
++ *
++ * Libav is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * Libav is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with Libav; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include "libavutil/aarch64/asm.S"
++#include "asm-offsets.h"
++
++.macro resample_one     fmt, es=2
++.ifnc \fmt, dbl
++    .macro  M_MUL2      x:vararg
++    .endm
++    .macro  M_MLA2      x:vararg
++    .endm
++.endif
++function ff_resample_one_\fmt\()_neon, export=1
++        sxtw            x2,  w2
++        ldr             x9,  [x0, #FILTER_BANK]
++        ldr             w6,  [x0, #FILTER_LENGTH]
++        ldp             w7,  w8,  [x0, #PHASE_SHIFT]    // and phase_mask
++        lsr             x10, x4,  x7                    // sample_index
++        and             x4,  x4,  x8
++        lsl             x11, x6,  #\es          // filter_length * elem_size
++        add             x3,  x3,  x10, lsl #\es // src[sample_index]
++        madd            x9,  x11, x4,  x9       // filter
++        cmp             w6,  #16
++        b.lt            5f
++8:      // remaining filter_length at least 16
++        subs            w6,  w6,  #16
++        LOAD8           v4,  v5,  v6,  v7,  x3
++        LOAD8           v16, v17, v18, v19, x9
++        M_MUL           v0,  v4,  v16, v1
++        M_MUL2          v1,  v6,  v18
++7:
++        LOAD8           v20, v21, v22, v23, x3
++        M_MLA           v0,  v5,  v17, v1
++        M_MLA2          v1,  v7,  v19
++        LOAD8           v24, v25, v26, v27, x9
++        M_MLA           v0,  v20, v24, v1
++        M_MLA2          v1,  v22, v26
++        b.eq            6f
++        cmp             w6,  #16
++        M_MLA           v0,  v21, v25, v1
++        M_MLA2          v1,  v23, v27
++        b.lt            4f
++        subs            w6,  w6,  #16
++        LOAD8           v4,  v5,  v6,  v7,  x3
++        LOAD8           v16, v17, v18, v19, x9
++        M_MLA           v0,  v4,  v16, v1
++        M_MLA2          v1,  v6,  v18
++        b               7b
++6:
++        M_MLA           v0,  v21, v25,  v1
++        M_MLA2          v1,  v23, v27
++        STORE_ONE       0,   x1,  x2,   v1
++        ret
++5:
++        movi            v0.16b, #0
++        movi            v1.16b, #0
++4:      // remaining filter_length 1-15
++        cmp             w6,  #4
++        b.lt            2f
++        subs            w6,  w6,  #4
++        LOAD4           v4,  v5,  x3
++        LOAD4           v6,  v7,  x9
++        M_MLA           v0,  v4,  v6,  v1
++        M_MLA2          v1,  v5,  v7
++        b.eq            0f
++        b               4b
++2:      // remaining filter_length 1-3
++        cmp             w6,  #2
++        b.lt            1f
++        LOAD2           2,   x3
++        LOAD2           3,   x9
++        subs            w6,  w6,  #2
++        M_MLA           v0,  v2,  v3
++        b.eq            0f
++1:      // remaining filter_length 1
++        LOAD1           6,   x3
++        LOAD1           7,   x9
++        M_MLA           v0,  v6,  v7
++0:
++        STORE_ONE       0,   x1,  x2,  v1
++        ret
++endfunc
++
++.purgem LOAD1
++.purgem LOAD2
++.purgem LOAD4
++.purgem LOAD8
++.purgem M_MLA
++.purgem M_MLA2
++.purgem M_MUL
++.purgem M_MUL2
++.purgem STORE_ONE
++.endm
++
++
++.macro  LOAD1           d1, addr
++        ldr             d\d1, [\addr], #8
++.endm
++.macro  LOAD2           d1, addr
++        ld1             {v\d1\().2d}, [\addr], #16
++.endm
++.macro  LOAD4           d1, d2, addr
++        ld1             {\d1\().2d,\d2\().2d}, [\addr], #32
++.endm
++.macro  LOAD8           d1, d2, d3, d4, addr
++        ld1             {\d1\().2d,\d2\().2d,\d3\().2d,\d4\().2d}, [\addr], #64
++.endm
++.macro  M_MLA           d, r0, r1, d2:vararg
++        fmla            \d\().2d, \r0\().2d, \r1\().2d
++.endm
++.macro  M_MLA2          second:vararg
++        M_MLA           \second
++.endm
++.macro  M_MUL           d, r0, r1, d2:vararg
++        fmul            \d\().2d, \r0\().2d, \r1\().2d
++.endm
++.macro  M_MUL2          second:vararg
++        M_MUL           \second
++.endm
++.macro  STORE_ONE       rn, addr, idx, d2
++        fadd            v\rn\().2d,  v\rn\().2d,  \d2\().2d
++        faddp           d\rn\(),  v\rn\().2d
++        str             d\rn\(),  [\addr, \idx, lsl #3]
++.endm
++
++resample_one dbl, 3
++
++
++.macro  LOAD1           d1, addr
++        ldr             s\d1, [\addr], #4
++.endm
++.macro  LOAD2           d1, addr
++        ld1             {v\d1\().2s}, [\addr], #8
++.endm
++.macro  LOAD4           d1, d2, addr
++        ld1             {\d1\().4s}, [\addr], #16
++.endm
++.macro  LOAD8           d1, d2, d3, d4, addr
++        ld1             {\d1\().4s,\d2\().4s}, [\addr], #32
++.endm
++.macro  M_MLA           d, r0, r1, d2:vararg
++        fmla            \d\().4s, \r0\().4s, \r1\().4s
++.endm
++.macro  M_MUL           d, r0, r1, d2:vararg
++        fmul            \d\().4s, \r0\().4s, \r1\().4s
++.endm
++.macro  STORE_ONE       rn, addr, idx, d2
++        faddp           v\rn\().4s,  v\rn\().4s,  v\rn\().4s
++        faddp           s\rn\(),  v\rn\().2s
++        str             s\rn\(),  [\addr, \idx, lsl #2]
++.endm
++
++resample_one flt
++
++
++.macro  LOAD1           d1, addr
++        ldr             h\d1, [\addr], #2
++.endm
++.macro  LOAD2           d1, addr
++        ldr             s\d1, [\addr], #4
++.endm
++.macro  LOAD4           d1, d2, addr
++        ld1             {\d1\().4h}, [\addr], #8
++.endm
++.macro  LOAD8           d1, d2, d3, d4, addr
++        ld1             {\d1\().4h,\d2\().4h}, [\addr], #16
++.endm
++.macro  M_MLA           d, r0, r1, d2:vararg
++        smlal           \d\().4s, \r0\().4h, \r1\().4h
++.endm
++.macro  M_MUL           d, r0, r1, d2:vararg
++        smull           \d\().4s, \r0\().4h, \r1\().4h
++.endm
++.macro  STORE_ONE       rn, addr, idx, d2
++        addp            v\rn\().4s,  v\rn\().4s,  v\rn\().4s
++        addp            v\rn\().4s,  v\rn\().4s,  v\rn\().4s
++        sqrshrn         v\rn\().4h,  v\rn\().4s,  #15
++        str             h\rn\(),  [\addr, \idx, lsl #1]
++.endm
++
++resample_one s16, 1
++
++
++.macro  LOAD1           d1, addr
++        ldr             s\d1, [\addr], #4
++.endm
++.macro  LOAD2           d1, addr
++        ld1             {v\d1\().2s}, [\addr], #8
++.endm
++.macro  LOAD4           d1, d2, addr
++        ld1             {\d1\().4s}, [\addr], #16
++.endm
++.macro  LOAD8           d1, d2, d3, d4, addr
++        ld1             {\d1\().4s,\d2\().4s}, [\addr], #32
++.endm
++.macro  M_MLA           d1, r0, r1, d2:vararg
++        smlal           \d1\().2d, \r0\().2s, \r1\().2s
++.ifnb \d2
++        smlal2          \d2\().2d, \r0\().4s, \r1\().4s
++.endif
++.endm
++.macro  M_MUL           d1, r0, r1, d2:vararg
++        smull           \d1\().2d, \r0\().2s, \r1\().2s
++.ifnb \d2
++        smull2          \d2\().2d, \r0\().4s, \r1\().4s
++.endif
++.endm
++.macro  STORE_ONE       rn, addr, idx, d2
++        add             v\rn\().2d,  v\rn\().2d,  \d2\().2d
++        addp            d\rn\(),     v\rn\().2d
++        sqrshrn         v\rn\().2s,  v\rn\().2d,  #30
++        str             s\rn\(),  [\addr, \idx, lsl #2]
++.endm
++
++resample_one s32
+diff --git a/libavresample/internal.h b/libavresample/internal.h
+index 057f89a..e59758c 100644
+--- a/libavresample/internal.h
++++ b/libavresample/internal.h
+@@ -107,4 +107,7 @@ struct AVAudioResampleContext {
+     ChannelMapInfo ch_map_info;
+ };
+ 
++
++void ff_audio_resample_init_aarch64(ResampleContext *c,
++                                    enum AVSampleFormat sample_fmt);
+ #endif /* AVRESAMPLE_INTERNAL_H */
+diff --git a/libavresample/resample.c b/libavresample/resample.c
+index 69c9bab..c71c757 100644
+--- a/libavresample/resample.c
++++ b/libavresample/resample.c
+@@ -193,6 +193,9 @@ ResampleContext *ff_audio_resample_init(AVAudioResampleContext *avr)
+         break;
+     }
+ 
++    if (ARCH_AARCH64)
++        ff_audio_resample_init_aarch64(c, avr->internal_sample_fmt);
++
+     felem_size = av_get_bytes_per_sample(avr->internal_sample_fmt);
+     c->filter_bank = av_mallocz(c->filter_length * (phase_count + 1) * felem_size);
+     if (!c->filter_bank)
+-- 
+1.9.2
+
