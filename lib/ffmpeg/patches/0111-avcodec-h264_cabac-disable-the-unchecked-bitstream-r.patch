@@ -1,0 +1,34 @@
+From fe36a8f3f785bea6a45f8187098a57425a31b406 Mon Sep 17 00:00:00 2001
+From: Michael Niedermayer <michaelni@gmx.at>
+Date: Sat, 15 Mar 2014 00:12:01 +0100
+Subject: [PATCH 111/120] avcodec/h264_cabac: disable the unchecked bitstream
+ reader for arm & aarch64
+
+The newly added optimizations do not work with the unchecked reader
+
+Signed-off-by: Michael Niedermayer <michaelni@gmx.at>
+
+Conflicts:
+	libavcodec/h264_cabac.c
+
+Signed-off-by: Linus Yang <laokongzi@gmail.com>
+---
+ libavcodec/h264_cabac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libavcodec/h264_cabac.c b/libavcodec/h264_cabac.c
+index 435343c..d469cb9 100644
+--- a/libavcodec/h264_cabac.c
++++ b/libavcodec/h264_cabac.c
+@@ -26,7 +26,7 @@
+  */
+ 
+ #define CABAC 1
+-#define UNCHECKED_BITSTREAM_READER 1
++#define UNCHECKED_BITSTREAM_READER (!ARCH_AARCH64)
+ 
+ #include "config.h"
+ #include "cabac.h"
+-- 
+1.9.2
+

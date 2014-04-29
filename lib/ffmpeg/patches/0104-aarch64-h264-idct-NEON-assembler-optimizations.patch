@@ -1,7 +1,7 @@
 From 0a272f1442c557265610f8a2779ea62aa0b98f14 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Fri, 13 Dec 2013 00:33:48 +0100
-Subject: [PATCH 104/108] aarch64: h264 idct NEON assembler optimizations
+Subject: [PATCH 104/120] aarch64: h264 idct NEON assembler optimizations
 
 Ported from ARMv7 NEON.
 
@@ -605,5 +605,5 @@ index 98ea15c..35a186c 100644
                           const int chroma_format_idc);
  void ff_h264dsp_init_ppc(H264DSPContext *c, const int bit_depth,
 -- 
-1.8.5.3
+1.9.2
 

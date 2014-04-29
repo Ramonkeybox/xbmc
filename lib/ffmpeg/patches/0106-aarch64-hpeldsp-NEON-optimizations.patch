@@ -1,7 +1,7 @@
 From e9084249a81252b578622be253125b09586b79a3 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Fri, 20 Dec 2013 20:03:58 +0100
-Subject: [PATCH 106/108] aarch64: hpeldsp NEON optimizations
+Subject: [PATCH 106/120] aarch64: hpeldsp NEON optimizations
 
 Ported from ARMv7 NEON.
 
@@ -638,5 +638,5 @@ index 454be38..e9da8a7 100644
  void ff_dsputil_init_bfin(DSPContext* c, AVCodecContext *avctx);
  void ff_dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx);
 -- 
-1.8.5.3
+1.9.2
 

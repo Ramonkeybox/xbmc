@@ -1,7 +1,7 @@
 From 4128c0384a5adacb53f70d2ace3cc4761b73eb59 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Wed, 18 Dec 2013 15:56:50 +0100
-Subject: [PATCH 105/108] aarch64: h264 qpel NEON optimizations
+Subject: [PATCH 105/120] aarch64: h264 qpel NEON optimizations
 
 Ported from ARMv7 NEON.
 
@@ -1225,7 +1225,7 @@ index 3af9bcd..c4310d7 100644
          trn1            \r4\().4H,  \r0\().4H,  \r1\().4H
          trn2            \r5\().4H,  \r0\().4H,  \r1\().4H
 diff --git a/libavcodec/h264qpel.c b/libavcodec/h264qpel.c
-index f46da8f..441e7fc 100644
+index f46da8f..441e7fcb 100644
 --- a/libavcodec/h264qpel.c
 +++ b/libavcodec/h264qpel.c
 @@ -95,6 +95,8 @@ void ff_h264qpel_init(H264QpelContext *c, int bit_depth)
@@ -1250,5 +1250,5 @@ index 6abfac0..041ee7d 100644
  void ff_h264qpel_init_ppc(H264QpelContext *c, int bit_depth);
  void ff_h264qpel_init_x86(H264QpelContext *c, int bit_depth);
 -- 
-1.8.5.3
+1.9.2
 

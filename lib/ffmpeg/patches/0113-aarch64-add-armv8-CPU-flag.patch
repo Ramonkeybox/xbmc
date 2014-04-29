@@ -1,0 +1,136 @@
+From 93dfda620a33851700f1bd0daed738241c419dec Mon Sep 17 00:00:00 2001
+From: Janne Grunau <j@jannau.net>
+Date: Sat, 5 Apr 2014 13:46:51 +0200
+Subject: [PATCH 113/120] aarch64: add armv8 CPU flag
+
+Conflicts:
+	Makefile
+	libavutil/aarch64/cpu.h
+
+Signed-off-by: Linus Yang <laokongzi@gmail.com>
+---
+ Makefile                | 2 +-
+ arch.mak                | 1 +
+ configure               | 3 +++
+ libavutil/aarch64/cpu.c | 5 +++--
+ libavutil/aarch64/cpu.h | 5 +++--
+ libavutil/cpu.c         | 2 ++
+ libavutil/cpu.h         | 1 +
+ 7 files changed, 14 insertions(+), 5 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 07821d1..de1d36c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -70,7 +70,7 @@ config.h: .config
+ 
+ SUBDIR_VARS := CLEANFILES EXAMPLES FFLIBS HOSTPROGS TESTPROGS TOOLS      \
+                HEADERS ARCH_HEADERS BUILT_HEADERS SKIPHEADERS            \
+-               ARMV5TE-OBJS ARMV6-OBJS VFP-OBJS NEON-OBJS                \
++               ARMV5TE-OBJS ARMV6-OBJS ARMV8-OBJS VFP-OBJS NEON-OBJS     \
+                ALTIVEC-OBJS VIS-OBJS                                     \
+                MMX-OBJS YASM-OBJS                                        \
+                MIPSFPU-OBJS MIPSDSPR2-OBJS MIPSDSPR1-OBJS MIPS32R2-OBJS  \
+diff --git a/arch.mak b/arch.mak
+index b71c8e5..89feed5 100644
+--- a/arch.mak
++++ b/arch.mak
+@@ -1,5 +1,6 @@
+ OBJS-$(HAVE_ARMV5TE) += $(ARMV5TE-OBJS) $(ARMV5TE-OBJS-yes)
+ OBJS-$(HAVE_ARMV6)   += $(ARMV6-OBJS)   $(ARMV6-OBJS-yes)
++OBJS-$(HAVE_ARMV8)   += $(ARMV8-OBJS)   $(ARMV8-OBJS-yes)
+ OBJS-$(HAVE_VFP)     += $(VFP-OBJS)     $(VFP-OBJS-yes)
+ OBJS-$(HAVE_NEON)    += $(NEON-OBJS)    $(NEON-OBJS-yes)
+ 
+diff --git a/configure b/configure
+index 870db79..071a031 100755
+--- a/configure
++++ b/configure
+@@ -1292,6 +1292,7 @@ ARCH_EXT_LIST_ARM='
+     armv5te
+     armv6
+     armv6t2
++    armv8
+     neon
+     vfp
+     vfpv3
+@@ -1612,6 +1613,7 @@ CMDLINE_APPEND="
+ armv5te_deps="arm"
+ armv6_deps="arm"
+ armv6t2_deps="arm"
++armv8_deps="aarch64"
+ neon_deps_any="aarch64 arm"
+ vfp_deps_any="aarch64 arm"
+ vfpv3_deps="vfp"
+@@ -3562,6 +3564,7 @@ EOF
+ od -t x1 $TMPO | grep -q '42 *49 *47 *45' && enable bigendian
+ 
+ if enabled aarch64; then
++    enabled armv8 && check_insn armv8 'prfm   pldl1strm, [x0]'
+     # internal assembler in clang 3.3 does not support this instruction
+     enabled neon && check_insn neon 'ext   v0.8B, v0.8B, v1.8B, #1'
+     enabled vfp  && check_insn vfp  'fmadd d0,    d0,    d1,    d2'
+diff --git a/libavutil/aarch64/cpu.c b/libavutil/aarch64/cpu.c
+index 5624b67..c2437b5 100644
+--- a/libavutil/aarch64/cpu.c
++++ b/libavutil/aarch64/cpu.c
+@@ -21,6 +21,7 @@
+ 
+ int ff_get_cpu_flags_aarch64(void)
+ {
+-    return AV_CPU_FLAG_NEON * HAVE_NEON |
+-           AV_CPU_FLAG_VFP  * HAVE_VFP;
++    return AV_CPU_FLAG_ARMV8 * HAVE_ARMV8 |
++           AV_CPU_FLAG_NEON  * HAVE_NEON  |
++           AV_CPU_FLAG_VFP   * HAVE_VFP;
+ }
+diff --git a/libavutil/aarch64/cpu.h b/libavutil/aarch64/cpu.h
+index 869e42b..6b2e09b 100644
+--- a/libavutil/aarch64/cpu.h
++++ b/libavutil/aarch64/cpu.h
+@@ -22,7 +22,8 @@
+ #include "config.h"
+ #include "libavutil/cpu.h"
+ 
+-#define have_neon(flags) (HAVE_NEON    && ((flags) & AV_CPU_FLAG_NEON))
+-#define have_vfp(flags)  (HAVE_VFP     && ((flags) & AV_CPU_FLAG_VFP))
++#define have_armv8(flags) (HAVE_ARMV8   && ((flags) & AV_CPU_FLAG_ARMV8))
++#define have_neon(flags)  (HAVE_NEON    && ((flags) & AV_CPU_FLAG_NEON))
++#define have_vfp(flags)   (HAVE_VFP     && ((flags) & AV_CPU_FLAG_VFP))
+ 
+ #endif /* AVUTIL_AARCH64_CPU_H */
+diff --git a/libavutil/cpu.c b/libavutil/cpu.c
+index 7f9c1f1..4bae5bd 100644
+--- a/libavutil/cpu.c
++++ b/libavutil/cpu.c
+@@ -98,6 +98,7 @@ int av_parse_cpu_flags(const char *s)
+         { "vfpv3",    NULL, 0, AV_OPT_TYPE_CONST, { .i64 = AV_CPU_FLAG_VFPV3    },    .unit = "flags" },
+         { "neon",     NULL, 0, AV_OPT_TYPE_CONST, { .i64 = AV_CPU_FLAG_NEON     },    .unit = "flags" },
+ #elif ARCH_AARCH64
++        { "armv8",    NULL, 0, AV_OPT_TYPE_CONST, { .i64 = AV_CPU_FLAG_ARMV8    },    .unit = "flags" },
+         { "neon",     NULL, 0, AV_OPT_TYPE_CONST, { .i64 = AV_CPU_FLAG_NEON     },    .unit = "flags" },
+         { "vfp",      NULL, 0, AV_OPT_TYPE_CONST, { .i64 = AV_CPU_FLAG_VFP      },    .unit = "flags" },
+ #endif
+@@ -190,6 +191,7 @@ static const struct {
+     const char *name;
+ } cpu_flag_tab[] = {
+ #if   ARCH_AARCH64
++    { AV_CPU_FLAG_ARMV8,     "armv8"      },
+     { AV_CPU_FLAG_NEON,      "neon"       },
+     { AV_CPU_FLAG_VFP,       "vfp"        },
+ #elif ARCH_ARM
+diff --git a/libavutil/cpu.h b/libavutil/cpu.h
+index 69c5c78..906b426 100644
+--- a/libavutil/cpu.h
++++ b/libavutil/cpu.h
+@@ -57,6 +57,7 @@
+ #define AV_CPU_FLAG_VFP          (1 << 3)
+ #define AV_CPU_FLAG_VFPV3        (1 << 4)
+ #define AV_CPU_FLAG_NEON         (1 << 5)
++#define AV_CPU_FLAG_ARMV8        (1 << 6)
+ 
+ /**
+  * Return the flags which specify extensions supported by the CPU.
+-- 
+1.9.2
+

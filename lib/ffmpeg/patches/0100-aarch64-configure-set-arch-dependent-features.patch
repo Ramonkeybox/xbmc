@@ -1,7 +1,7 @@
 From c13b99d4b861ab2e7615cd0ece4d288f29f5a1ad Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Thu, 12 Dec 2013 17:45:32 +0100
-Subject: [PATCH 100/108] aarch64: configure: set arch dependent features
+Subject: [PATCH 100/120] aarch64: configure: set arch dependent features
 
 Stack is always 16 byte aligned and clz, 64bit operations and unaligned
 memory access are fast in aarch64 mode on ARMv8.
@@ -32,5 +32,5 @@ index 351611d..1b3cdac 100755
  inline_asm_deps="!tms470"
  need_memalign="altivec neon sse"
 -- 
-1.8.5.3
+1.9.2
 
