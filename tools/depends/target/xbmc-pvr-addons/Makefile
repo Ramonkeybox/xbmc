@@ -36,6 +36,7 @@ $(PLATFORM)/bootstrap: $(GIT_DIR)/current/$(VERSION)
 	git checkout $(VERSION) -- .
 
 $(PLATFORM)/configure: $(PLATFORM)/bootstrap
+	cd $(PLATFORM)/xbmc; patch -p3 < ../../addon-load-arm64.patch
 	cd $(PLATFORM); ./bootstrap
 
 $(PLATFORM)/Makefile: $(PLATFORM)/configure
