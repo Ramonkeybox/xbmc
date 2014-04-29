@@ -1,7 +1,7 @@
 From fa84e5da0c39be2e574793623ac07d00b38b53fa Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Fri, 20 Dec 2013 21:02:43 +0100
-Subject: [PATCH 107/108] aarch64: h264 loop filter NEON optimizations
+Subject: [PATCH 107/120] aarch64: h264 loop filter NEON optimizations
 
 Ported from ARMv7 NEON.
 
@@ -361,5 +361,5 @@ index c4310d7..f1072b7 100644
          trn1            \r4\().4H,  \r0\().4H,  \r1\().4H
          trn2            \r5\().4H,  \r0\().4H,  \r1\().4H
 -- 
-1.8.5.3
+1.9.2
 
