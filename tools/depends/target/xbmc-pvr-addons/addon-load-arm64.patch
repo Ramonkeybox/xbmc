@@ -1,0 +1,26 @@
+From b2987e964ed147d3861382a035280ed36784164f Mon Sep 17 00:00:00 2001
+From: Linus Yang <laokongzi@gmail.com>
+Date: Mon, 17 Feb 2014 12:56:27 +0800
+Subject: [PATCH] ios: arm64: fix PVR addon load
+
+fix arch name detection by adding __arm64__ macro
+---
+ addons/library.xbmc.addon/libXBMC_addon.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/addons/library.xbmc.addon/libXBMC_addon.h b/addons/library.xbmc.addon/libXBMC_addon.h
+index 0b2d17c..fe437bd 100644
+--- a/addons/library.xbmc.addon/libXBMC_addon.h
++++ b/addons/library.xbmc.addon/libXBMC_addon.h
+@@ -35,7 +35,7 @@
+ #if defined(__APPLE__)          // osx
+ #if defined(__POWERPC__)
+ #define ADDON_HELPER_ARCH       "powerpc-osx"
+-#elif defined(__arm__)
++#elif defined(__arm__) || defined(__arm64__)
+ #define ADDON_HELPER_ARCH       "arm-osx"
+ #elif defined(__x86_64__)
+ #define ADDON_HELPER_ARCH       "x86-osx"
+-- 
+1.9.1
+
