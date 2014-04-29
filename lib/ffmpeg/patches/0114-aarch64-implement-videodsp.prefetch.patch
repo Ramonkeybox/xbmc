@@ -1,0 +1,138 @@
+From 9f28a25a53b204c8a276da729a85819ad23b1b62 Mon Sep 17 00:00:00 2001
+From: Janne Grunau <j@jannau.net>
+Date: Sat, 5 Apr 2014 11:47:18 +0200
+Subject: [PATCH 114/120] aarch64: implement videodsp.prefetch
+
+8% faster h264 decoding on Apple A7.
+
+Conflicts:
+	libavcodec/aarch64/Makefile
+
+Signed-off-by: Linus Yang <laokongzi@gmail.com>
+---
+ libavcodec/aarch64/Makefile        |  3 +++
+ libavcodec/aarch64/videodsp.S      | 28 ++++++++++++++++++++++++++++
+ libavcodec/aarch64/videodsp_init.c | 32 ++++++++++++++++++++++++++++++++
+ libavcodec/videodsp.c              |  2 ++
+ libavcodec/videodsp.h              |  1 +
+ 5 files changed, 66 insertions(+)
+ create mode 100644 libavcodec/aarch64/videodsp.S
+ create mode 100644 libavcodec/aarch64/videodsp_init.c
+
+diff --git a/libavcodec/aarch64/Makefile b/libavcodec/aarch64/Makefile
+index 14b2b6f..c1f2a6f 100644
+--- a/libavcodec/aarch64/Makefile
++++ b/libavcodec/aarch64/Makefile
+@@ -2,9 +2,12 @@ OBJS-$(CONFIG_H264CHROMA)               += aarch64/h264chroma_init_aarch64.o
+ OBJS-$(CONFIG_H264DSP)                  += aarch64/h264dsp_init_aarch64.o
+ OBJS-$(CONFIG_H264QPEL)                 += aarch64/h264qpel_init_aarch64.o
+ OBJS                                    += aarch64/hpeldsp_init_aarch64.o
++OBJS-$(CONFIG_VIDEODSP)                 += aarch64/videodsp_init.o
+ OBJS-$(CONFIG_RV40_DECODER)             += aarch64/rv40dsp_init_aarch64.o
+ OBJS-$(CONFIG_VC1_DECODER)              += aarch64/vc1dsp_init_aarch64.o
+ 
++ARMV8-OBJS-$(CONFIG_VIDEODSP)           += aarch64/videodsp.o
++
+ NEON-OBJS-$(CONFIG_H264CHROMA)          += aarch64/h264cmc_neon.o
+ NEON-OBJS-$(CONFIG_H264DSP)             += aarch64/h264dsp_neon.o              \
+                                            aarch64/h264idct_neon.o
+diff --git a/libavcodec/aarch64/videodsp.S b/libavcodec/aarch64/videodsp.S
+new file mode 100644
+index 0000000..7ce5a7d
+--- /dev/null
++++ b/libavcodec/aarch64/videodsp.S
+@@ -0,0 +1,28 @@
++/*
++ * This file is part of Libav.
++ *
++ * Libav is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * Libav is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with Libav; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include "libavutil/aarch64/asm.S"
++
++function ff_prefetch_aarch64, export=1
++        subs            w2,  w2,  #2
++        prfm            pldl1strm, [x0]
++        prfm            pldl1strm, [x0,  x1]
++        add             x0,  x0,  x1,  lsl #1
++        b.gt            X(ff_prefetch_aarch64)
++        ret
++endfunc
+diff --git a/libavcodec/aarch64/videodsp_init.c b/libavcodec/aarch64/videodsp_init.c
+new file mode 100644
+index 0000000..59b697d
+--- /dev/null
++++ b/libavcodec/aarch64/videodsp_init.c
+@@ -0,0 +1,32 @@
++/*
++ * This file is part of Libav.
++ *
++ * Libav is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * Libav is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with Libav; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include "libavutil/attributes.h"
++#include "libavutil/cpu.h"
++#include "libavutil/aarch64/cpu.h"
++#include "libavcodec/videodsp.h"
++
++void ff_prefetch_aarch64(uint8_t *mem, ptrdiff_t stride, int h);
++
++av_cold void ff_videodsp_init_aarch64(VideoDSPContext *ctx, int bpc)
++{
++    int cpu_flags = av_get_cpu_flags();
++
++    if (have_armv8(cpu_flags))
++        ctx->prefetch = ff_prefetch_aarch64;
++}
+diff --git a/libavcodec/videodsp.c b/libavcodec/videodsp.c
+index f91bac3..6ce1197 100644
+--- a/libavcodec/videodsp.c
++++ b/libavcodec/videodsp.c
+@@ -43,6 +43,8 @@ void ff_videodsp_init(VideoDSPContext *ctx, int bpc)
+         ctx->emulated_edge_mc = ff_emulated_edge_mc_16;
+     }
+ 
++    if (ARCH_AARCH64)
++        ff_videodsp_init_aarch64(ctx, bpc);
+     if (ARCH_ARM)
+         ff_videodsp_init_arm(ctx, bpc);
+     if (ARCH_PPC)
+diff --git a/libavcodec/videodsp.h b/libavcodec/videodsp.h
+index e397720..87d7384 100644
+--- a/libavcodec/videodsp.h
++++ b/libavcodec/videodsp.h
+@@ -72,6 +72,7 @@ typedef struct VideoDSPContext {
+ void ff_videodsp_init(VideoDSPContext *ctx, int bpc);
+ 
+ /* for internal use only (i.e. called by ff_videodsp_init() */
++void ff_videodsp_init_aarch64(VideoDSPContext *ctx, int bpc);
+ void ff_videodsp_init_arm(VideoDSPContext *ctx, int bpc);
+ void ff_videodsp_init_ppc(VideoDSPContext *ctx, int bpc);
+ void ff_videodsp_init_x86(VideoDSPContext *ctx, int bpc);
+-- 
+1.9.2
+

@@ -1,0 +1,93 @@
+From 41c6a20182669aa8af8f9d5ba1a6dfb3ac2646d7 Mon Sep 17 00:00:00 2001
+From: Janne Grunau <janne-libav@jannau.net>
+Date: Fri, 7 Feb 2014 16:05:50 +0100
+Subject: [PATCH 109/120] aarch64: use EXTERN_ASM consistently for exported
+ symbols
+
+Based on e3fec3f095ab5ea08ee662942d98526aaf5e3635 for arm.
+
+Signed-off-by: Linus Yang <laokongzi@gmail.com>
+---
+ libavcodec/aarch64/h264idct_neon.S | 16 ++++++++--------
+ libavutil/aarch64/asm.S            |  9 ++++++++-
+ 2 files changed, 16 insertions(+), 9 deletions(-)
+
+diff --git a/libavcodec/aarch64/h264idct_neon.S b/libavcodec/aarch64/h264idct_neon.S
+index 1c90c4c..99c2cb5 100644
+--- a/libavcodec/aarch64/h264idct_neon.S
++++ b/libavcodec/aarch64/h264idct_neon.S
+@@ -106,8 +106,8 @@ function ff_h264_idct_add16_neon, export=1
+         mov             w9,  w3         // stride
+         movrel          x7,  scan8
+         mov             x10, #16
+-        movrel          x13, ff_h264_idct_dc_add_neon
+-        movrel          x14, ff_h264_idct_add_neon
++        movrel          x13, X(ff_h264_idct_dc_add_neon)
++        movrel          x14, X(ff_h264_idct_add_neon)
+ 1:      mov             w2,  w9
+         ldrb            w3,  [x7], #1
+         ldrsw           x0,  [x5], #4
+@@ -133,8 +133,8 @@ function ff_h264_idct_add16intra_neon, export=1
+         mov             w9,  w3         // stride
+         movrel          x7,  scan8
+         mov             x10, #16
+-        movrel          x13, ff_h264_idct_dc_add_neon
+-        movrel          x14, ff_h264_idct_add_neon
++        movrel          x13, X(ff_h264_idct_dc_add_neon)
++        movrel          x14, X(ff_h264_idct_add_neon)
+ 1:      mov             w2,  w9
+         ldrb            w3,  [x7], #1
+         ldrsw           x0,  [x5], #4
+@@ -160,8 +160,8 @@ function ff_h264_idct_add8_neon, export=1
+         add             x5,  x1,  #16*4         // block_offset
+         add             x9,  x2,  #16*32        // block
+         mov             w19, w3                 // stride
+-        movrel          x13, ff_h264_idct_dc_add_neon
+-        movrel          x14, ff_h264_idct_add_neon
++        movrel          x13, X(ff_h264_idct_dc_add_neon)
++        movrel          x14, X(ff_h264_idct_add_neon)
+         movrel          x7,  scan8+16
+         mov             x10, #0
+         mov             x11, #16
+@@ -374,8 +374,8 @@ function ff_h264_idct8_add4_neon, export=1
+         mov             w2,  w3
+         movrel          x7,  scan8
+         mov             w10, #16
+-        movrel          x13, ff_h264_idct8_dc_add_neon
+-        movrel          x14, ff_h264_idct8_add_neon
++        movrel          x13, X(ff_h264_idct8_dc_add_neon)
++        movrel          x14, X(ff_h264_idct8_add_neon)
+ 1:      ldrb            w9,  [x7], #4
+         ldrsw           x0,  [x5], #16
+         ldrb            w9,  [x4, w9, UXTW]
+diff --git a/libavutil/aarch64/asm.S b/libavutil/aarch64/asm.S
+index 94e5a84..6c93d11 100644
+--- a/libavutil/aarch64/asm.S
++++ b/libavutil/aarch64/asm.S
+@@ -36,11 +36,14 @@ ELF     .size   \name, . - \name
+         .align          \align
+     .if \export
+         .global EXTERN_ASM\name
++ELF     .type   EXTERN_ASM\name, %function
++        .func   EXTERN_ASM\name
+ EXTERN_ASM\name:
+-    .endif
++    .else
+ ELF     .type   \name, %function
+         .func   \name
+ \name:
++    .endif
+ .endm
+ 
+ .macro  const   name, align=2
+@@ -61,3 +64,7 @@ ELF     .size   \name, . - \name
+         ldr             \rd, =\val
+ #endif
+ .endm
++
++#define GLUE(a, b) a ## b
++#define JOIN(a, b) GLUE(a, b)
++#define X(s) JOIN(EXTERN_ASM, s)
+-- 
+1.9.2
+
