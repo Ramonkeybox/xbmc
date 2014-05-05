@@ -90,7 +90,7 @@ echo "Homepage: http://xbmc.org/"                 >> $DIRNAME/$PACKAGE/DEBIAN/co
 echo "Maintainer: Scott Davilla, Edgar Hucek"     >> $DIRNAME/$PACKAGE/DEBIAN/control
 echo "Author: TeamXBMC"                           >> $DIRNAME/$PACKAGE/DEBIAN/control
 echo "Section: Multimedia"                        >> $DIRNAME/$PACKAGE/DEBIAN/control
-echo "Icon: file:///Applications/XBMC.app/xbmc-cydia.png" >> $DIRNAME/$PACKAGE/DEBIAN/control
+echo "Icon: file:///Applications/XBMC.app/AppIcon57x57.png" >> $DIRNAME/$PACKAGE/DEBIAN/control
 
 # prerm: called on remove and upgrade - get rid of existing bits.
 echo "#!/bin/sh"                                  >  $DIRNAME/$PACKAGE/DEBIAN/prerm
@@ -105,7 +105,6 @@ chmod +x $DIRNAME/$PACKAGE/DEBIAN/postinst
 # prep XBMC.app
 mkdir -p $DIRNAME/$PACKAGE/Applications
 cp -r $XBMC $DIRNAME/$PACKAGE/Applications/
-cp -pf $DIRNAME/../xbmc-icon/mirrors.xbmc.org.png $DIRNAME/$PACKAGE/Applications/XBMC.app/xbmc-cydia.png
 find $DIRNAME/$PACKAGE/Applications/ -name '.svn' -exec rm -rf {} \;
 find $DIRNAME/$PACKAGE/Applications/ -name '.git*' -exec rm -rf {} \;
 find $DIRNAME/$PACKAGE/Applications/ -name '.DS_Store'  -exec rm -rf {} \;
