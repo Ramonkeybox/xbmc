@@ -1,0 +1,31 @@
+From 3d7de5a72e7d11e5ad372587dfe28a8f381bc2b6 Mon Sep 17 00:00:00 2001
+From: Janne Grunau <janne-libav@jannau.net>
+Date: Fri, 30 May 2014 16:57:44 +0200
+Subject: [PATCH 125/125] aarch64: use '#' for whole line asm comments
+
+Both gnu as and clang treat lines starting with '#' as comments if they
+aren't consumed by the C-style preprocessor.
+Using '//' does not work with clang since comments are removed before
+macro expansion.
+
+Signed-off-by: Linus Yang <laokongzi@gmail.com>
+---
+ libavutil/aarch64/asm.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libavutil/aarch64/asm.S b/libavutil/aarch64/asm.S
+index b23eb4f..3690a33 100644
+--- a/libavutil/aarch64/asm.S
++++ b/libavutil/aarch64/asm.S
+@@ -23,7 +23,7 @@
+ #ifdef __ELF__
+ #   define ELF
+ #else
+-#   define ELF //
++#   define ELF  #
+ #endif
+ 
+ .macro  function name, export=0, align=2
+-- 
+1.9.3
+

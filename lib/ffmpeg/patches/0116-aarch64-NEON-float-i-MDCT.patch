@@ -1,7 +1,7 @@
 From a2da0b3b7f5463ef3ec78dd5524aae31fa2c5d20 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Tue, 15 Apr 2014 18:35:57 +0200
-Subject: [PATCH 116/120] aarch64: NEON float (i)MDCT
+Subject: [PATCH 116/125] aarch64: NEON float (i)MDCT
 
 Approximately as fast as the ARM NEON version on Apple's A7.
 
@@ -382,5 +382,5 @@ index 0000000..bccd832
 +        ret
 +endfunc
 -- 
-1.9.2
+1.9.3
 

@@ -1,7 +1,7 @@
 From d7ba7c1249eca8d2438c39d0d8ff19348a9dafac Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Sat, 19 Apr 2014 18:17:23 +0200
-Subject: [PATCH 118/120] aarch64: NEON fixed/floating point MPADSP
+Subject: [PATCH 118/125] aarch64: NEON fixed/floating point MPADSP
  apply_window
 
 30%/25% (fixed/float) faster mp3 decoding on Apple's A7. The floating
@@ -341,5 +341,5 @@ index 623d2df..c512412 100644
  void ff_mpadsp_init_x86(MPADSPContext *s);
  void ff_mpadsp_init_altivec(MPADSPContext *s);
 -- 
-1.9.2
+1.9.3
 

@@ -1,7 +1,7 @@
 From 704d51c7a2c97b19375808d7757b1e01b9e89d2c Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Tue, 10 Dec 2013 20:13:32 +0100
-Subject: [PATCH 102/120] aarch64: add cpuflags support for NEON and VFP
+Subject: [PATCH 102/125] aarch64: add cpuflags support for NEON and VFP
 
 NEON and VFP are currently mandatory for all ARMv8 profiles. Both are
 handled as extensions as far as cpuflags are concerned. This is
@@ -268,5 +268,5 @@ index c8f34e0..69c5c78 100644
  int ff_get_cpu_flags_ppc(void);
  int ff_get_cpu_flags_x86(void);
 -- 
-1.9.2
+1.9.3
 

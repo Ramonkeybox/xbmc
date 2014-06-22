@@ -1,7 +1,7 @@
 From 12109b3dd68eaa97f7f347ef4b85db47ea753f3d Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Mon, 21 Apr 2014 16:13:28 +0200
-Subject: [PATCH 120/120] aarch64: NEON optimized FIR audio resampling
+Subject: [PATCH 120/125] aarch64: NEON optimized FIR audio resampling
 
 Optimized for the default filter length 16.
 
@@ -412,5 +412,5 @@ index 69c9bab..c71c757 100644
      c->filter_bank = av_mallocz(c->filter_length * (phase_count + 1) * felem_size);
      if (!c->filter_bank)
 -- 
-1.9.2
+1.9.3
 

@@ -1,7 +1,7 @@
 From 71ab7c6cbb71a56f85a1ad55574dcdca0fc1418d Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Mon, 25 Nov 2013 16:58:54 +0100
-Subject: [PATCH 101/120] aarch64: bswap inline assembly
+Subject: [PATCH 101/125] aarch64: bswap inline assembly
 
 Signed-off-by: Janne Grunau <janne-libav@jannau.net>
 Signed-off-by: Linus Yang <laokongzi@gmail.com>
@@ -83,5 +83,5 @@ index 06f6548..f38e1de 100644
  #elif ARCH_AVR32
  #   include "avr32/bswap.h"
 -- 
-1.9.2
+1.9.3
 
