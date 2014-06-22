@@ -1,7 +1,7 @@
 From 200da3d60ef271a893e94dc3131967cc79dbfb89 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Sun, 2 Mar 2014 22:54:34 +0100
-Subject: [PATCH 112/120] aarch64: float_dsp NEON assembler
+Subject: [PATCH 112/125] aarch64: float_dsp NEON assembler
 
 Ported from arm NEON and added vector_dmul_scalar.
 
@@ -340,5 +340,5 @@ index d0447d6..f605d24 100644
  void ff_float_dsp_init_ppc(AVFloatDSPContext *fdsp, int strict);
  void ff_float_dsp_init_x86(AVFloatDSPContext *fdsp);
 -- 
-1.9.2
+1.9.3
 

@@ -1,7 +1,7 @@
 From 5924057dc94fd7ecf3ab0b62c25b823040fa2d09 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Wed, 16 Apr 2014 23:47:32 +0200
-Subject: [PATCH 117/120] aarch64: NEON float to s16 audio conversion
+Subject: [PATCH 117/125] aarch64: NEON float to s16 audio conversion
 
 Conflicts:
 	libavresample/aarch64/Makefile
@@ -477,5 +477,5 @@ index 6a3089d..d8e42d0 100644
  void ff_audio_convert_init_x86(AudioConvert *ac);
  
 -- 
-1.9.2
+1.9.3
 

@@ -1,7 +1,7 @@
 From 20cfc56cb50f670fbc4b43d500c136f8a8422b3e Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Sun, 20 Apr 2014 17:57:36 +0200
-Subject: [PATCH 119/120] aarch64: NEON vorbis_inverse_coupling
+Subject: [PATCH 119/125] aarch64: NEON vorbis_inverse_coupling
 
 From the ARMv7 NEON version. 16 times faster as the C version, overall
 more than 12% faster vorbis decoding on Apple's A7.
@@ -192,5 +192,5 @@ index ed14049..7abec4e 100644
  void ff_vorbisdsp_init_arm(VorbisDSPContext *dsp);
  void ff_vorbisdsp_init_ppc(VorbisDSPContext *dsp);
 -- 
-1.9.2
+1.9.3
 

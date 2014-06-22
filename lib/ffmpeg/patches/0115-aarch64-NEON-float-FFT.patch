@@ -1,7 +1,7 @@
 From 41231c03a7f82b77304ee46724f0c524149d1559 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Wed, 26 Mar 2014 15:20:42 +0100
-Subject: [PATCH 115/120] aarch64: NEON float FFT
+Subject: [PATCH 115/125] aarch64: NEON float FFT
 
 Approximately as fast as the ARM NEON version on Apple's A7.
 
@@ -553,5 +553,5 @@ index 9d92b2c..14bfba9 100644
  void ff_fft_init_arm(FFTContext *s);
  void ff_fft_init_mips(FFTContext *s);
 -- 
-1.9.2
+1.9.3
 

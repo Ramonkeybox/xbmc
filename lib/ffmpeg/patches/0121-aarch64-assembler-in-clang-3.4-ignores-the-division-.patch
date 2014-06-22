@@ -1,0 +1,29 @@
+From 57a8c86b9f3d0cf5da3eda87f47610f65d468e6c Mon Sep 17 00:00:00 2001
+From: Janne Grunau <janne-libav@jannau.net>
+Date: Tue, 13 May 2014 15:47:51 +0200
+Subject: [PATCH 121/125] aarch64: assembler in clang-3.4 ignores the division
+ by two
+
+Values are positive powers of two, so just replace it with right shift.
+
+Signed-off-by: Linus Yang <laokongzi@gmail.com>
+---
+ libavcodec/aarch64/fft_neon.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libavcodec/aarch64/fft_neon.S b/libavcodec/aarch64/fft_neon.S
+index 5189bfb..9802349 100644
+--- a/libavcodec/aarch64/fft_neon.S
++++ b/libavcodec/aarch64/fft_neon.S
+@@ -348,7 +348,7 @@ function fft\n\()_neon  align=6
+         sub             x0,  x28, #\n4*2*8
+         ldp             x28, x30, [sp], #16
+         movrel          x4,  X(ff_cos_\n)
+-        mov             x2,  #\n4/2
++        mov             x2,  #\n4>>1
+         b               fft_pass_neon
+ endfunc
+ .endm
+-- 
+1.9.3
+
