@@ -126,7 +126,17 @@ if ((grep /^-c$/, @gcc_cmd) && !(grep /^-o/, @gcc_cmd)) {
         }
     }
 }
-@preprocess_c_cmd = map { /\.(o|obj)$/ ? "-" : $_ } @preprocess_c_cmd;
+# replace only the '-o' argument with '-', avoids rewriting the make dependency
+# target specified with -MT to '-'
+my $index = 1;
+while ($index < $#preprocess_c_cmd) {
+    if ($preprocess_c_cmd[$index] eq "-o") {
+        $index++;
+        $preprocess_c_cmd[$index] = "-";
+    }
+    $index++;
+}
+
 my $tempfile;
 if ($as_type ne "armasm") {
     @gcc_cmd = map { /\.[csS]$/ ? qw(-x assembler -) : $_ } @gcc_cmd;
@@ -658,9 +668,9 @@ sub handle_serialized_line {
     }
 
     # handle GNU as pc-relative relocations for adrp/add
-    if ($line =~ /(.*)\s*adrp([\w\s\d]+)\s*,\s*#:pg_hi21:([^\s]+)/) {
+    if ($line =~ /(.*)\s*adrp([\w\s\d]+)\s*,\s*#?:pg_hi21:([^\s]+)/) {
         $line = "$1 adrp$2, ${3}\@PAGE\n";
-    } elsif ($line =~ /(.*)\s*add([\w\s\d]+)\s*,([\w\s\d]+)\s*,\s*#:lo12:([^\s]+)/) {
+    } elsif ($line =~ /(.*)\s*add([\w\s\d]+)\s*,([\w\s\d]+)\s*,\s*#?:lo12:([^\s]+)/) {
         $line = "$1 add$2, $3, ${4}\@PAGEOFF\n";
     }
 
@@ -773,9 +783,18 @@ sub handle_serialized_line {
         if ($line =~ /^\s*movi\s+(v[0-3]?\d\.(?:2|4|8)[hsHS])\s*,\s*(#\w+)\b\s*$/) {
             $line = "        movi $1, $2, lsl #0\n";
         }
-        # Xcode 5 misses the alias uxtl replace it with the more general ushll
-        if ($line =~ /^\s*uxtl(2)?\s+(v[0-3]?\d\.[248][hsdHSD])\s*,\s*(v[0-3]?\d\.(?:4|8|16)[bhsBHS])\b\s*$/) {
-            $line = "        ushll$1 $2, $3, #0\n";
+        # Xcode 5 misses the alias uxtl. Replace it with the more general ushll.
+        # Clang 3.4 misses the alias sxtl too. Replace it with the more general sshll.
+        if ($line =~ /^\s*(s|u)xtl(2)?\s+(v[0-3]?\d\.[248][hsdHSD])\s*,\s*(v[0-3]?\d\.(?:2|4|8|16)[bhsBHS])\b\s*$/) {
+            $line = "        $1shll$2 $3, $4, #0\n";
+        }
+        # clang 3.4 does not automatically use shifted immediates in add/sub
+        if ($as_type eq "clang" and
+            $line =~ /^(\s*(?:add|sub)s?) ([^#l]+)#([\d\+\-\*\/ <>]+)\s*$/) {
+            my $imm = eval $3;
+            if ($imm > 4095 and not ($imm & 4095)) {
+                $line = "$1 $2#" . ($imm >> 12) . ", lsl #12\n";
+            }
         }
         if ($ENV{GASPP_FIX_XCODE5}) {
             if ($line =~ /^\s*bsl\b/) {
