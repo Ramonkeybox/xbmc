@@ -1,7 +1,7 @@
 From 4128c0384a5adacb53f70d2ace3cc4761b73eb59 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Wed, 18 Dec 2013 15:56:50 +0100
-Subject: [PATCH 105/120] aarch64: h264 qpel NEON optimizations
+Subject: [PATCH 105/125] aarch64: h264 qpel NEON optimizations
 
 Ported from ARMv7 NEON.
 
@@ -1250,5 +1250,5 @@ index 6abfac0..041ee7d 100644
  void ff_h264qpel_init_ppc(H264QpelContext *c, int bit_depth);
  void ff_h264qpel_init_x86(H264QpelContext *c, int bit_depth);
 -- 
-1.9.2
+1.9.3
 

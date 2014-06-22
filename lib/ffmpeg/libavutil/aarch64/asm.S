@@ -23,7 +23,7 @@
 #ifdef __ELF__
 #   define ELF
 #else
-#   define ELF //
+#   define ELF  #
 #endif
 
 .macro  function name, export=0, align=2
@@ -57,9 +57,12 @@ ELF     .size   \name, . - \name
 .endm
 
 .macro  movrel rd, val
-#if CONFIG_PIC
-        adrp            \rd, #:pg_hi21:\val
-        add             \rd, \rd, #:lo12:\val
+#if CONFIG_PIC && defined(__APPLE__)
+        adrp            \rd, \val@PAGE
+        add             \rd, \rd, \val@PAGEOFF
+#elif CONFIG_PIC
+        adrp            \rd, \val
+        add             \rd, \rd, :lo12:\val
 #else
         ldr             \rd, =\val
 #endif

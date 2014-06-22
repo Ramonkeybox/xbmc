@@ -1,7 +1,7 @@
 From e9ac0fdb15eeb9fc748c1eee208b9ca0d79fe2e0 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Tue, 10 Dec 2013 20:16:08 +0100
-Subject: [PATCH 103/120] aarch64: h264 chroma motion compensation NEON
+Subject: [PATCH 103/125] aarch64: h264 chroma motion compensation NEON
  optimizations
 
 Since RV40 and VC-1 use almost the same algorithm so optimizations for
@@ -699,5 +699,5 @@ index 6540eff..e39689d 100644
  void ff_vc1dsp_init_x86(VC1DSPContext* dsp);
  
 -- 
-1.9.2
+1.9.3
 

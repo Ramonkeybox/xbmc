@@ -1,0 +1,29 @@
+From 26b0d72e2e768a93b77fff95c8e0f57864a2c846 Mon Sep 17 00:00:00 2001
+From: Janne Grunau <janne-libav@jannau.net>
+Date: Tue, 3 Jun 2014 11:24:15 +0200
+Subject: [PATCH 124/125] aarch64: remove optional :pg_hi21: for adrp
+ instruction
+
+Clang's integrated assembler does not support it.
+
+Signed-off-by: Linus Yang <laokongzi@gmail.com>
+---
+ libavutil/aarch64/asm.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libavutil/aarch64/asm.S b/libavutil/aarch64/asm.S
+index fb635d0..b23eb4f 100644
+--- a/libavutil/aarch64/asm.S
++++ b/libavutil/aarch64/asm.S
+@@ -61,7 +61,7 @@ ELF     .size   \name, . - \name
+         adrp            \rd, \val@PAGE
+         add             \rd, \rd, \val@PAGEOFF
+ #elif CONFIG_PIC
+-        adrp            \rd, :pg_hi21:\val
++        adrp            \rd, \val
+         add             \rd, \rd, :lo12:\val
+ #else
+         ldr             \rd, =\val
+-- 
+1.9.3
+

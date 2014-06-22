@@ -1,7 +1,7 @@
 From 04c5c34c78b08a1c06da54105e7fe87a821b7f69 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Fri, 10 Jan 2014 14:07:24 +0100
-Subject: [PATCH 108/120] aarch64: h264 (bi)weight NEON optimizations
+Subject: [PATCH 108/125] aarch64: h264 (bi)weight NEON optimizations
 
 Ported from ARMv7 NEON.
 
@@ -302,5 +302,5 @@ index 777ddef..9b4610a 100644
 +        weight_func     8
 +        weight_func     4
 -- 
-1.9.2
+1.9.3
 
