@@ -1,7 +1,7 @@
 From 93dfda620a33851700f1bd0daed738241c419dec Mon Sep 17 00:00:00 2001
 From: Janne Grunau <j@jannau.net>
 Date: Sat, 5 Apr 2014 13:46:51 +0200
-Subject: [PATCH 113/125] aarch64: add armv8 CPU flag
+Subject: [PATCH 113/131] aarch64: add armv8 CPU flag
 
 Conflicts:
 	Makefile
@@ -132,5 +132,5 @@ index 69c5c78..906b426 100644
  /**
   * Return the flags which specify extensions supported by the CPU.
 -- 
-1.9.3
+2.1.0
 

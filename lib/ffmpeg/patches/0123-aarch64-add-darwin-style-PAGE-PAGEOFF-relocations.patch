@@ -1,7 +1,7 @@
 From 74b5459695a61ec855a89c410a84b1e53457c92c Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Sun, 1 Jun 2014 15:50:42 +0200
-Subject: [PATCH 123/125] aarch64: add darwin style PAGE/PAGEOFF relocations
+Subject: [PATCH 123/131] aarch64: add darwin style PAGE/PAGEOFF relocations
 
 Signed-off-by: Linus Yang <laokongzi@gmail.com>
 ---
@@ -25,5 +25,5 @@ index 8ac5c18..fb635d0 100644
          add             \rd, \rd, :lo12:\val
  #else
 -- 
-1.9.3
+2.1.0
 

@@ -1,7 +1,7 @@
 From 57a8c86b9f3d0cf5da3eda87f47610f65d468e6c Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Tue, 13 May 2014 15:47:51 +0200
-Subject: [PATCH 121/125] aarch64: assembler in clang-3.4 ignores the division
+Subject: [PATCH 121/131] aarch64: assembler in clang-3.4 ignores the division
  by two
 
 Values are positive powers of two, so just replace it with right shift.
@@ -25,5 +25,5 @@ index 5189bfb..9802349 100644
  endfunc
  .endm
 -- 
-1.9.3
+2.1.0
 

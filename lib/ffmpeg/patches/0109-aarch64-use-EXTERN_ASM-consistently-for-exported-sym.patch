@@ -1,7 +1,7 @@
 From 41c6a20182669aa8af8f9d5ba1a6dfb3ac2646d7 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Fri, 7 Feb 2014 16:05:50 +0100
-Subject: [PATCH 109/125] aarch64: use EXTERN_ASM consistently for exported
+Subject: [PATCH 109/131] aarch64: use EXTERN_ASM consistently for exported
  symbols
 
 Based on e3fec3f095ab5ea08ee662942d98526aaf5e3635 for arm.
@@ -89,5 +89,5 @@ index 94e5a84..6c93d11 100644
 +#define JOIN(a, b) GLUE(a, b)
 +#define X(s) JOIN(EXTERN_ASM, s)
 -- 
-1.9.3
+2.1.0
 

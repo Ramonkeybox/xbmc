@@ -1,0 +1,49 @@
+From f229e8c10457b16e9ef0360964eb2c260f43d0d5 Mon Sep 17 00:00:00 2001
+From: Janne Grunau <janne-libav@jannau.net>
+Date: Thu, 24 Jul 2014 14:50:46 +0200
+Subject: [PATCH 127/131] aarch64: add ',' between assembler macro arguments
+ where missing
+
+llvm's integrated assembler does not accept spaces as macro argument
+delimiter when targeting darwin. Using a explicit delimiter is a good
+idea in principle since it makes case like 'macro 4 -2' vs 'macro 4 - 2'
+clear.
+
+Conflicts:
+	libavcodec/aarch64/opus_imdct_neon.S
+
+Signed-off-by: Linus Yang <laokongzi@gmail.com>
+---
+ libavcodec/aarch64/fft_neon.S          | 2 +-
+ libavcodec/aarch64/mpegaudiodsp_neon.S | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libavcodec/aarch64/fft_neon.S b/libavcodec/aarch64/fft_neon.S
+index 9802349..5f88bed 100644
+--- a/libavcodec/aarch64/fft_neon.S
++++ b/libavcodec/aarch64/fft_neon.S
+@@ -336,7 +336,7 @@ function fft_pass_neon
+ endfunc
+ 
+ .macro  def_fft n, n2, n4
+-function fft\n\()_neon  align=6
++function fft\n\()_neon, align=6
+         sub             sp,  sp,  #16
+         stp             x28, x30, [sp]
+         add             x28, x0,  #\n4*2*8
+diff --git a/libavcodec/aarch64/mpegaudiodsp_neon.S b/libavcodec/aarch64/mpegaudiodsp_neon.S
+index 39875fe..808576a 100644
+--- a/libavcodec/aarch64/mpegaudiodsp_neon.S
++++ b/libavcodec/aarch64/mpegaudiodsp_neon.S
+@@ -24,7 +24,7 @@
+ #define WFRAC_BITS  16   // fractional bits for window
+ #define OUT_SHIFT (WFRAC_BITS + FRAC_BITS - 15)
+ 
+-const   tbl_rev128.s align=4
++const   tbl_rev128.s, align=4
+         .byte           12, 13, 14, 15
+         .byte            8,  9, 10, 11
+         .byte            4,  5,  6,  7
+-- 
+2.1.0
+

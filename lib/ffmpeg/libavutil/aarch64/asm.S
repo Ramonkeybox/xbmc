@@ -51,7 +51,11 @@ ELF     .type   \name, %function
 ELF     .size   \name, . - \name
         .purgem endconst
     .endm
+#ifndef __MACH__
         .section        .rodata
+#else
+        .const_data
+#endif
         .align          \align
 \name:
 .endm

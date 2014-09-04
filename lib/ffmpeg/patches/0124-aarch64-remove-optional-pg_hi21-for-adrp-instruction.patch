@@ -1,7 +1,7 @@
 From 26b0d72e2e768a93b77fff95c8e0f57864a2c846 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Tue, 3 Jun 2014 11:24:15 +0200
-Subject: [PATCH 124/125] aarch64: remove optional :pg_hi21: for adrp
+Subject: [PATCH 124/131] aarch64: remove optional :pg_hi21: for adrp
  instruction
 
 Clang's integrated assembler does not support it.
@@ -25,5 +25,5 @@ index fb635d0..b23eb4f 100644
  #else
          ldr             \rd, =\val
 -- 
-1.9.3
+2.1.0
 

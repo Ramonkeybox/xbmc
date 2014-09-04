@@ -1,53 +1,58 @@
-From 5924057dc94fd7ecf3ab0b62c25b823040fa2d09 Mon Sep 17 00:00:00 2001
-From: Janne Grunau <janne-libav@jannau.net>
-Date: Wed, 16 Apr 2014 23:47:32 +0200
-Subject: [PATCH 117/131] aarch64: NEON float to s16 audio conversion
+From a62a67f17ff59c9eaf81d6f6bed4af2a0b8df9bc Mon Sep 17 00:00:00 2001
+From: Michael Niedermayer <michaelni@gmx.at>
+Date: Sun, 24 Aug 2014 17:09:45 +0200
+Subject: [PATCH 131/131] swr: aarch64 audio_convert and neon clobber test
 
-Conflicts:
-	libavresample/aarch64/Makefile
+Ported from avresample
+Code by:  Mans Rullgard, Janne Grunau, Martin Storsjo
 
+Signed-off-by: Michael Niedermayer <michaelni@gmx.at>
 Signed-off-by: Linus Yang <laokongzi@gmail.com>
 ---
- libavresample/aarch64/Makefile             |   3 +
- libavresample/aarch64/audio_convert_init.c |  49 ++++
- libavresample/aarch64/audio_convert_neon.S | 363 +++++++++++++++++++++++++++++
- libavresample/audio_convert.c              |   2 +
- libavresample/audio_convert.h              |   1 +
- 5 files changed, 418 insertions(+)
- create mode 100644 libavresample/aarch64/Makefile
- create mode 100644 libavresample/aarch64/audio_convert_init.c
- create mode 100644 libavresample/aarch64/audio_convert_neon.S
+ libswresample/aarch64/Makefile             |   5 +
+ libswresample/aarch64/audio_convert_init.c |  67 ++++++
+ libswresample/aarch64/audio_convert_neon.S | 363 +++++++++++++++++++++++++++++
+ libswresample/aarch64/neontest.c           |  29 +++
+ libswresample/audioconvert.c               |   1 +
+ libswresample/swresample_internal.h        |   4 +
+ 6 files changed, 469 insertions(+)
+ create mode 100644 libswresample/aarch64/Makefile
+ create mode 100644 libswresample/aarch64/audio_convert_init.c
+ create mode 100644 libswresample/aarch64/audio_convert_neon.S
+ create mode 100644 libswresample/aarch64/neontest.c
 
-diff --git a/libavresample/aarch64/Makefile b/libavresample/aarch64/Makefile
+diff --git a/libswresample/aarch64/Makefile b/libswresample/aarch64/Makefile
 new file mode 100644
-index 0000000..9e936d7
+index 0000000..320ed67
 --- /dev/null
-+++ b/libavresample/aarch64/Makefile
-@@ -0,0 +1,3 @@
++++ b/libswresample/aarch64/Makefile
+@@ -0,0 +1,5 @@
 +OBJS                             += aarch64/audio_convert_init.o
 +
++OBJS-$(CONFIG_NEON_CLOBBER_TEST) += aarch64/neontest.o
++
 +NEON-OBJS                        += aarch64/audio_convert_neon.o
-diff --git a/libavresample/aarch64/audio_convert_init.c b/libavresample/aarch64/audio_convert_init.c
+diff --git a/libswresample/aarch64/audio_convert_init.c b/libswresample/aarch64/audio_convert_init.c
 new file mode 100644
-index 0000000..020dd61
+index 0000000..60e24ad
 --- /dev/null
-+++ b/libavresample/aarch64/audio_convert_init.c
-@@ -0,0 +1,49 @@
++++ b/libswresample/aarch64/audio_convert_init.c
+@@ -0,0 +1,67 @@
 +/*
-+ * This file is part of Libav.
++ * This file is part of libswresample.
 + *
-+ * Libav is free software; you can redistribute it and/or
++ * libswresample is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU Lesser General Public
 + * License as published by the Free Software Foundation; either
 + * version 2.1 of the License, or (at your option) any later version.
 + *
-+ * Libav is distributed in the hope that it will be useful,
++ * libswresample is distributed in the hope that it will be useful,
 + * but WITHOUT ANY WARRANTY; without even the implied warranty of
 + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 + * Lesser General Public License for more details.
 + *
 + * You should have received a copy of the GNU Lesser General Public
-+ * License along with Libav; if not, write to the Free Software
++ * License along with libswresample; if not, write to the Free Software
 + * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 + */
 +
@@ -58,61 +63,79 @@ index 0000000..020dd61
 +#include "libavutil/cpu.h"
 +#include "libavutil/aarch64/cpu.h"
 +#include "libavutil/samplefmt.h"
-+#include "libavresample/audio_convert.h"
++#include "libswresample/swresample_internal.h"
++#include "libswresample/audioconvert.h"
 +
-+void ff_conv_flt_to_s16_neon(int16_t *dst, const float *src, int len);
-+void ff_conv_fltp_to_s16_neon(int16_t *dst, float *const *src,
-+                              int len, int channels);
-+void ff_conv_fltp_to_s16_2ch_neon(int16_t *dst, float *const *src,
-+                                  int len, int channels);
++void swri_oldapi_conv_flt_to_s16_neon(int16_t *dst, const float *src, int len);
++void swri_oldapi_conv_fltp_to_s16_2ch_neon(int16_t *dst, float *const *src, int len, int channels);
++void swri_oldapi_conv_fltp_to_s16_nch_neon(int16_t *dst, float *const *src, int len, int channels);
 +
-+av_cold void ff_audio_convert_init_aarch64(AudioConvert *ac)
++static void conv_flt_to_s16_neon(uint8_t **dst, const uint8_t **src, int len){
++    swri_oldapi_conv_flt_to_s16_neon((int16_t*)*dst, (const float*)*src, len);
++}
++
++static void conv_fltp_to_s16_2ch_neon(uint8_t **dst, const uint8_t **src, int len){
++    swri_oldapi_conv_fltp_to_s16_2ch_neon((int16_t*)*dst, (float *const*)src, len, 2);
++}
++
++static void conv_fltp_to_s16_nch_neon(uint8_t **dst, const uint8_t **src, int len){
++    int channels;
++    for(channels=3; channels<SWR_CH_MAX && src[channels]; channels++)
++        ;
++    swri_oldapi_conv_fltp_to_s16_nch_neon((int16_t*)*dst, (float *const*)src, len, channels);
++}
++
++av_cold void swri_audio_convert_init_aarch64(struct AudioConvert *ac,
++                                       enum AVSampleFormat out_fmt,
++                                       enum AVSampleFormat in_fmt,
++                                       int channels)
 +{
 +    int cpu_flags = av_get_cpu_flags();
 +
++    ac->simd_f= NULL;
++
 +    if (have_neon(cpu_flags)) {
-+        ff_audio_convert_set_func(ac, AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_FLT,
-+                                  0, 16, 8, "NEON",
-+                                  ff_conv_flt_to_s16_neon);
-+        ff_audio_convert_set_func(ac, AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_FLTP,
-+                                  2, 16, 8, "NEON",
-+                                  ff_conv_fltp_to_s16_2ch_neon);
-+        ff_audio_convert_set_func(ac, AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_FLTP,
-+                                  0, 16, 8, "NEON",
-+                                  ff_conv_fltp_to_s16_neon);
++        if(out_fmt == AV_SAMPLE_FMT_S16 && in_fmt == AV_SAMPLE_FMT_FLT || out_fmt == AV_SAMPLE_FMT_S16P && in_fmt == AV_SAMPLE_FMT_FLTP)
++            ac->simd_f = conv_flt_to_s16_neon;
++        if(out_fmt == AV_SAMPLE_FMT_S16 && in_fmt == AV_SAMPLE_FMT_FLTP && channels == 2)
++            ac->simd_f = conv_fltp_to_s16_2ch_neon;
++        if(out_fmt == AV_SAMPLE_FMT_S16 && in_fmt == AV_SAMPLE_FMT_FLTP && channels >  2)
++            ac->simd_f = conv_fltp_to_s16_nch_neon;
++        if(ac->simd_f)
++            ac->in_simd_align_mask = ac->out_simd_align_mask = 15;
 +    }
 +}
-diff --git a/libavresample/aarch64/audio_convert_neon.S b/libavresample/aarch64/audio_convert_neon.S
+diff --git a/libswresample/aarch64/audio_convert_neon.S b/libswresample/aarch64/audio_convert_neon.S
 new file mode 100644
-index 0000000..198cf86
+index 0000000..74feff4
 --- /dev/null
-+++ b/libavresample/aarch64/audio_convert_neon.S
++++ b/libswresample/aarch64/audio_convert_neon.S
 @@ -0,0 +1,363 @@
 +/*
 + * Copyright (c) 2008 Mans Rullgard <mans@mansr.com>
 + * Copyright (c) 2014 Janne Grunau <janne-libav@jannau.net>
 + *
-+ * This file is part of Libav.
++ * This file is part of FFmpeg.
 + *
-+ * Libav is free software; you can redistribute it and/or
++ * FFmpeg is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU Lesser General Public
 + * License as published by the Free Software Foundation; either
 + * version 2.1 of the License, or (at your option) any later version.
 + *
-+ * Libav is distributed in the hope that it will be useful,
++ * FFmpeg is distributed in the hope that it will be useful,
 + * but WITHOUT ANY WARRANTY; without even the implied warranty of
 + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 + * Lesser General Public License for more details.
 + *
 + * You should have received a copy of the GNU Lesser General Public
-+ * License along with Libav; if not, write to the Free Software
++ * License along with FFmpeg; if not, write to the Free Software
 + * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 + */
 +
 +#include "config.h"
 +#include "libavutil/aarch64/asm.S"
 +
-+function ff_conv_flt_to_s16_neon, export=1
++function swri_oldapi_conv_flt_to_s16_neon, export=1
 +        subs            x2,  x2,  #8
 +        ld1             {v0.4s}, [x1],  #16
 +        fcvtzs          v4.4s,  v0.4s,  #31
@@ -156,7 +179,7 @@ index 0000000..198cf86
 +        ret
 +endfunc
 +
-+function ff_conv_fltp_to_s16_2ch_neon, export=1
++function swri_oldapi_conv_fltp_to_s16_2ch_neon, export=1
 +        ldp             x4,  x5,  [x1]
 +        subs            x2,  x2,  #8
 +        ld1             {v0.4s},  [x4], #16
@@ -219,12 +242,12 @@ index 0000000..198cf86
 +        ret
 +endfunc
 +
-+function ff_conv_fltp_to_s16_neon, export=1
++function swri_oldapi_conv_fltp_to_s16_nch_neon, export=1
 +        cmp             w3,  #2
-+        b.eq            X(ff_conv_fltp_to_s16_2ch_neon)
++        b.eq            X(swri_oldapi_conv_fltp_to_s16_2ch_neon)
 +        b.gt            1f
 +        ldr             x1,  [x1]
-+        b               X(ff_conv_flt_to_s16_neon)
++        b               X(swri_oldapi_conv_flt_to_s16_neon)
 +1:
 +        cmp             w3,  #4
 +        lsl             x12, x3,  #1
@@ -451,31 +474,68 @@ index 0000000..198cf86
 +end:
 +        ret
 +endfunc
-diff --git a/libavresample/audio_convert.c b/libavresample/audio_convert.c
-index 371617c..27add23 100644
---- a/libavresample/audio_convert.c
-+++ b/libavresample/audio_convert.c
-@@ -301,6 +301,8 @@ AudioConvert *ff_audio_convert_alloc(AVAudioResampleContext *avr,
+diff --git a/libswresample/aarch64/neontest.c b/libswresample/aarch64/neontest.c
+new file mode 100644
+index 0000000..85c71bf
+--- /dev/null
++++ b/libswresample/aarch64/neontest.c
+@@ -0,0 +1,29 @@
++/*
++ * check NEON registers for clobbers
++ * Copyright (c) 2013 Martin Storsjo
++ *
++ * This file is part of FFmpeg.
++ *
++ * FFmpeg is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * FFmpeg is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with FFmpeg; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include "libswresample/swresample.h"
++#include "libavutil/aarch64/neontest.h"
++
++wrap(swr_convert(struct SwrContext *s, uint8_t **out, int out_count,
++                 const uint8_t **in , int in_count))
++{
++    testneonclobbers(swr_convert, s, out, out_count, in, in_count);
++}
+diff --git a/libswresample/audioconvert.c b/libswresample/audioconvert.c
+index 4ba0ff1..8128c56 100644
+--- a/libswresample/audioconvert.c
++++ b/libswresample/audioconvert.c
+@@ -156,6 +156,7 @@ AudioConvert *swri_audio_convert_alloc(enum AVSampleFormat out_fmt,
  
-     set_generic_function(ac);
+     if(HAVE_YASM && HAVE_MMX) swri_audio_convert_init_x86(ctx, out_fmt, in_fmt, channels);
+     if(ARCH_ARM)              swri_audio_convert_init_arm(ctx, out_fmt, in_fmt, channels);
++    if(ARCH_AARCH64)          swri_audio_convert_init_aarch64(ctx, out_fmt, in_fmt, channels);
  
-+    if (ARCH_AARCH64)
-+        ff_audio_convert_init_aarch64(ac);
-     if (ARCH_ARM)
-         ff_audio_convert_init_arm(ac);
-     if (ARCH_X86)
-diff --git a/libavresample/audio_convert.h b/libavresample/audio_convert.h
-index 6a3089d..d8e42d0 100644
---- a/libavresample/audio_convert.h
-+++ b/libavresample/audio_convert.h
-@@ -96,6 +96,7 @@ int ff_audio_convert(AudioConvert *ac, AudioData *out, AudioData *in);
+     return ctx;
+ }
+diff --git a/libswresample/swresample_internal.h b/libswresample/swresample_internal.h
+index be36ba6..e687444 100644
+--- a/libswresample/swresample_internal.h
++++ b/libswresample/swresample_internal.h
+@@ -187,6 +187,10 @@ void swri_rematrix_init_x86(struct SwrContext *s);
+ void swri_get_dither(SwrContext *s, void *dst, int len, unsigned seed, enum AVSampleFormat noise_fmt);
+ int swri_dither_init(SwrContext *s, enum AVSampleFormat out_fmt, enum AVSampleFormat in_fmt);
  
- /* arch-specific initialization functions */
- 
-+void ff_audio_convert_init_aarch64(AudioConvert *ac);
- void ff_audio_convert_init_arm(AudioConvert *ac);
- void ff_audio_convert_init_x86(AudioConvert *ac);
- 
++void swri_audio_convert_init_aarch64(struct AudioConvert *ac,
++                                 enum AVSampleFormat out_fmt,
++                                 enum AVSampleFormat in_fmt,
++                                 int channels);
+ void swri_audio_convert_init_arm(struct AudioConvert *ac,
+                                  enum AVSampleFormat out_fmt,
+                                  enum AVSampleFormat in_fmt,
 -- 
 2.1.0
 
