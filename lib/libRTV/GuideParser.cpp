@@ -855,7 +855,7 @@ int CalculateMinutes( int seconds )
 //-------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
-#if _MSC_VER < 1700
+#if _MSC_VER < 1700 && !defined(ntohll)
 DWORD64 ntohll(DWORD64 llValue)
 {
     DWORD64 retval = 0;
