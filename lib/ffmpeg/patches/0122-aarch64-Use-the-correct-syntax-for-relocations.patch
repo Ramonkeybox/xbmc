@@ -1,7 +1,7 @@
 From 2169fddebc9e856ff600975945e45fb49fb87fce Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Martin=20Storsj=C3=B6?= <martin@martin.st>
 Date: Thu, 29 May 2014 14:37:31 +0300
-Subject: [PATCH 122/125] aarch64: Use the correct syntax for relocations
+Subject: [PATCH 122/131] aarch64: Use the correct syntax for relocations
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -34,5 +34,5 @@ index 6c93d11..8ac5c18 100644
          ldr             \rd, =\val
  #endif
 -- 
-1.9.3
+2.1.0
 

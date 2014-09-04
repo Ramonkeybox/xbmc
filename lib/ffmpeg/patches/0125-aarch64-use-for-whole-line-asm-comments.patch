@@ -1,7 +1,7 @@
 From 3d7de5a72e7d11e5ad372587dfe28a8f381bc2b6 Mon Sep 17 00:00:00 2001
 From: Janne Grunau <janne-libav@jannau.net>
 Date: Fri, 30 May 2014 16:57:44 +0200
-Subject: [PATCH 125/125] aarch64: use '#' for whole line asm comments
+Subject: [PATCH 125/131] aarch64: use '#' for whole line asm comments
 
 Both gnu as and clang treat lines starting with '#' as comments if they
 aren't consumed by the C-style preprocessor.
@@ -27,5 +27,5 @@ index b23eb4f..3690a33 100644
  
  .macro  function name, export=0, align=2
 -- 
-1.9.3
+2.1.0
 
