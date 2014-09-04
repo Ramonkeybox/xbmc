@@ -35,6 +35,8 @@ $(PLATFORM)/bootstrap: $(GIT_DIR)/current/$(VERSION)
 
 $(PLATFORM)/configure: $(PLATFORM)/bootstrap
 	cd $(PLATFORM)/xbmc; patch -p3 < ../../addon-load-arm64.patch
+	cd $(PLATFORM); patch -p1 < ../ntohll-darwin-xcode6.patch
+	cd $(PLATFORM); patch -p1 < ../pvr2wmc-darwin-xcode6.patch
 	cd $(PLATFORM); ./bootstrap
 
 $(PLATFORM)/Makefile: $(PLATFORM)/configure

@@ -1,0 +1,13 @@
+diff --git a/addons/pvr.wmc/src/pvr2wmc.cpp b/addons/pvr.wmc/src/pvr2wmc.cpp
+index 04b88c6..8e280d1 100644
+--- a/addons/pvr.wmc/src/pvr2wmc.cpp
++++ b/addons/pvr.wmc/src/pvr2wmc.cpp
+@@ -202,7 +202,7 @@ void Pvr2Wmc::TriggerUpdates(vector<CStdString> results)
+ 				return;
+ 			}
+ 
+-			XBMC->Log(LOG_INFO, "Received message from backend: %s", response);
++			// XBMC->Log(LOG_INFO, "Received message from backend: %s", response);
+ 			CStdString infoStr;
+ 
+ 			// Get notification level
