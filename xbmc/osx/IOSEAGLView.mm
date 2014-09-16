@@ -174,8 +174,19 @@
       kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat,
       nil];
 		
+#ifdef __IPHONE_7_0
+    // Try OpenGL ES 3.0
+    EAGLContext *aContext = [[EAGLContext alloc] 
+      initWithAPI:kEAGLRenderingAPIOpenGLES3];
+
+    // Fallback to OpenGL ES 2.0
+    if (aContext == nil)
+      aContext = [[EAGLContext alloc] 
+        initWithAPI:kEAGLRenderingAPIOpenGLES2];
+#else
     EAGLContext *aContext = [[EAGLContext alloc] 
       initWithAPI:kEAGLRenderingAPIOpenGLES2];
+#endif
     
     if (!aContext)
       ELOG(@"Failed to create ES context");
