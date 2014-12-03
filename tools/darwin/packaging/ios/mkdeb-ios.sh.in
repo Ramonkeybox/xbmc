@@ -54,7 +54,7 @@ fi
 
 PACKAGE=org.xbmc.@APP_NAME_LC@-ios
 PACKAGE_ARM64="${PACKAGE}64"
-PACKAGE_ARM64_OLD="org.xbmc.xbmc-ios-arm64"
+PACKAGE_ARM64_OLD="org.xbmc.xbmc-ios, org.xbmc.xbmc-ios-arm64"
 
 VERSION=@APP_VERSION_MAJOR@.@APP_VERSION_MINOR@
 REVISION=1
