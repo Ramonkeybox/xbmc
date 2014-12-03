@@ -11,7 +11,9 @@ BASE_URL=http://sourceware.mirrors.tds.net/pub/sourceware.org/libffi
 # configuration settings
 CONFIGURE= ./configure --prefix=$(PREFIX) --disable-shared --disable-builddir 
 ifeq ($(OS), ios)
+ifneq ($(CPU), arm64)
 CONFIGURE+=CFLAGS=-no-integrated-as
+endif
 endif
 
 
