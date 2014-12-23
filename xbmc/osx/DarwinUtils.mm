@@ -34,6 +34,14 @@
   #import <UIKit/UIKit.h>
   #import <mach/mach_host.h>
   #import <sys/sysctl.h>
+
+  #ifndef kCFCoreFoundationVersionNumber_iOS_8_0
+  #define kCFCoreFoundationVersionNumber_iOS_8_0 1140.10
+  #endif
+
+  #define SYSTEM_GE_IOS_8() (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_8_0)
+  #define SANDBOX_PREFIX "/var/mobile/Applications/"
+  #define SANDBOX_PREFIX_IOS_8 "/var/mobile/Containers/Bundle/Application/"
 #else
   #import <Cocoa/Cocoa.h>
   #import <CoreFoundation/CoreFoundation.h>
@@ -423,6 +431,10 @@ int  CDarwinUtils::GetExecutablePath(char* path, uint32_t *pathsize)
   // b) Kodi application running under IOS
   // c) Kodi application running under OSX
   pathname = [[NSBundle mainBundle] executablePath];
+  if ([pathname hasPrefix:@"/private/var"])
+  {
+    pathname = [pathname substringFromIndex:[@"/private" length]];
+  }
   strcpy(path, [pathname UTF8String]);
   *pathsize = strlen(path);
   //CLog::Log(LOGDEBUG, "DarwinExecutablePath(b/c) -> %s", path);
@@ -464,9 +476,14 @@ bool CDarwinUtils::IsIosSandboxed(void)
     result = GetExecutablePath(given_path, &path_size);
     if (result == 0)
     {
-      // we re sandboxed if we are installed in /var/mobile/Applications
-      if (strlen("/var/mobile/Applications/") < path_size &&
-        strncmp(given_path, "/var/mobile/Applications/", strlen("/var/mobile/Applications/")) == 0)
+      // we re sandboxed if we are installed in sandbox prefix
+      const char *sandbox_prefix = SANDBOX_PREFIX;
+      if (SYSTEM_GE_IOS_8())
+      {
+        sandbox_prefix = SANDBOX_PREFIX_IOS_8;
+      }
+      if (strlen(sandbox_prefix) < path_size &&
+        strncmp(given_path, sandbox_prefix, strlen(sandbox_prefix)) == 0)
       {
         ret = 1;
       }
@@ -497,8 +514,8 @@ bool CDarwinUtils::HasVideoToolboxDecoder(void)
     }
     else
     {
-      /* When XBMC is started from a sandbox directory we have to check the sysctl values */      
-      if (IsIosSandboxed())
+      /* When XBMC is started from a sandbox directory on iOS < 8 we have to check the sysctl values */      
+      if (!SYSTEM_GE_IOS_8() && IsIosSandboxed())
       {
         uint64_t proc_enforce = 0;
         uint64_t vnode_enforce = 0; 
